@@ -1,0 +1,7 @@
+name: star_samtools
+channels:
+  - conda-forge
+  - bioconda
+dependencies:
+  - samtools=1.5
+  - star=2.6.1

@@ -1,0 +1,61 @@
+# ==============================================================================
+# Snakemake SLURM profile
+#
+# This file defines how Snakemake submits individual workflow rules to SLURM.
+# It is loaded by the controller through:
+#
+#   snakemake --profile slurm_config
+#
+# Cluster-specific settings that may need to be adapted:
+#
+#   1. Maximum number of jobs submitted simultaneously.
+#   2. SLURM partition name.
+#   3. Memory, CPU and time syntax used by the scheduler.
+#   4. Job log directory.
+#   5. Email notification settings.
+#
+# Rule-specific resources such as time, CPUs and memory are provided by each
+# Snakemake rule through:
+#
+#   resources.time_min
+#   resources.cpus
+#   resources.mem_gb
+#
+# The parent directory ./logs/slurm/ must exist before launching the workflow.
+# ==============================================================================
+
+# Maximum number of jobs that Snakemake may submit to SLURM at the same time.
+# Reduce this value if your cluster imposes stricter limits.
+jobs: 1000
+
+# Command used to submit every Snakemake rule as an independent SLURM job.
+#
+# {dependencies}
+#   Contains the SLURM job IDs of upstream rules. parseJobID.sh converts them
+#   into a valid --dependency=afterok:<job_ids> argument.
+#
+# {params.job_name}
+#   Job name defined inside the corresponding Snakemake rule.
+#
+# {resources.time_min}
+#   Maximum runtime requested by the rule, in minutes.
+#
+# {resources.cpus}
+#   Number of CPUs requested by the rule.
+#
+# {resources.mem_gb}
+#   Memory requested by the rule, in gigabytes.
+#
+# %j
+#   Replaced automatically by SLURM with the job ID.
+cluster: "sbatch $(./slurm_config/parseJobID.sh {dependencies}) \
+--job-name={params.job_name} \
+--partition=standard \
+--time={resources.time_min} \
+--nodes=1 \
+--ntasks=1 \
+--cpus-per-task={resources.cpus} \
+--mem={resources.mem_gb}G \
+--mail-type=FAIL \
+--output=\"./logs/slurm/{params.job_name}-%j.out\" \
+--error=\"./logs/slurm/{params.job_name}-%j.err\""

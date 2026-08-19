@@ -1,0 +1,11 @@
+# envs/samtools_picard.yaml
+
+name: samtools_picard
+channels:
+  - conda-forge
+  - bioconda
+  - defaults
+
+dependencies:
+  - samtools
+  - picard

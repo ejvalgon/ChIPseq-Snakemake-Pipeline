@@ -1,0 +1,11 @@
+# envs/phantompeakqualtools.yaml
+name: phantompeakqualtools
+channels:
+  - conda-forge
+  - bioconda
+  - defaults
+
+dependencies:
+  - phantompeakqualtools
+  - r-base
+  - samtools

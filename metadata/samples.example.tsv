@@ -1,0 +1,17 @@
+sample	role	condition	replicate	mark	control	peak_type
+H3K27ac_control_rep1	IP	control	1	H3K27ac	Input_control_rep1	narrow
+H3K27ac_control_rep2	IP	control	2	H3K27ac	Input_control_rep2	narrow
+H3K27ac_treated_rep1	IP	treated	1	H3K27ac	Input_treated_rep1	narrow
+H3K27ac_treated_rep2	IP	treated	2	H3K27ac	Input_treated_rep2	narrow
+H3K27me3_control_rep1	IP	control	1	H3K27me3	Input_control_rep1	broad
+H3K27me3_control_rep2	IP	control	2	H3K27me3	Input_control_rep2	broad
+H3K27me3_treated_rep1	IP	treated	1	H3K27me3	Input_treated_rep1	broad
+H3K27me3_treated_rep2	IP	treated	2	H3K27me3	Input_treated_rep2	broad
+RNAPII_control_rep1	IP	control	1	RNAPII	Input_control_rep1	both
+RNAPII_control_rep2	IP	control	2	RNAPII	Input_control_rep2	both
+RNAPII_treated_rep1	IP	treated	1	RNAPII	Input_treated_rep1	both
+RNAPII_treated_rep2	IP	treated	2	RNAPII	Input_treated_rep2	both
+Input_control_rep1	INPUT	control	1			
+Input_control_rep2	INPUT	control	2			
+Input_treated_rep1	INPUT	treated	1			
+Input_treated_rep2	INPUT	treated	2			

@@ -1,0 +1,9 @@
+# envs/macs3.yaml
+name: macs3
+channels:
+  - conda-forge
+  - bioconda
+  - defaults
+
+dependencies:
+  - macs3
