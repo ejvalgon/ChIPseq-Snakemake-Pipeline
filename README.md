@@ -8,10 +8,10 @@ The workflow supports paired-end and single-end sequencing, STAR or Bowtie2 alig
 
 - Paired-end and single-end sequencing support
 - STAR or Bowtie2 alignment
-- Optional spike-in normalization, with CPM-normalized coverage when disabled
+- Spike-in or CPM signal normalization
 - MACS3 narrow, broad, or combined peak calling
 - Consensus and union peak generation across biological replicates and conditions
-- FRiP, peak-level QC, union-peak read counting, and signal heatmaps
+- FRiP, peak QC, read-count matrices, and signal heatmaps
 - BAM- and bigWig-level reproducibility analyses
 - MultiQC reporting
 - Rule-specific Conda environments
@@ -62,9 +62,7 @@ The workflow is designed for execution on a **SLURM-based HPC system** and requi
 - Conda or Miniconda
 - access to a SLURM workload manager
 
-Rule-specific software dependencies are defined in `envs/` and are installed automatically by Snakemake when the workflow is launched with `--use-conda`.
-
-Reference genomes and aligner indices must be prepared in advance and specified in `config/config.yaml`.
+Rule-specific software dependencies are defined in `envs/`. Reference genomes and aligner indices must be prepared in advance and specified in `config/config.yaml`.
 
 ## Configuration
 
@@ -82,12 +80,9 @@ The main execution modes are controlled from `config/config.yaml`.
 layout: "PAIRED"
 ```
 
-Supported values:
+Supported values are `PAIRED` and `SINGLE`.
 
-- `PAIRED`
-- `SINGLE`
-
-For paired-end data, common naming conventions such as the following are supported:
+Paired-end FASTQ files can follow common naming conventions such as:
 
 ```text
 sample_R1_001.fastq.gz
@@ -111,18 +106,13 @@ The aligner is selected in the configuration file:
 aligner: "star"
 ```
 
-Supported values:
+Supported values are star and bowtie2.
 
-```text
-star
-bowtie2
-```
-
-Reference paths for both aligners are defined inside the organism-specific section of the configuration file.
+Reference paths are defined in the organism-specific configuration section.
 
 ## Spike-in normalization
 
-Spike-in normalization can be enabled or disabled directly from the configuration:
+Spike-in normalization can be enabled or disabled directly from the configuration file:
 
 ```yaml
 spikeIN: "yes"
@@ -136,28 +126,18 @@ spikeIN: "no"
 
 ### Without spike-in normalization
 
-When `spikeIN: "no"`:
-
-- reads are aligned against the main-organism reference;
-- the resulting BAM files are used directly for downstream analyses;
-- coverage tracks are generated as **CPM-normalized bigWigs**.
+When disabled, reads are aligned to the main reference and CPM-normalized bigWigs are generated.
 
 ### With spike-in normalization
 
-When `spikeIN: "yes"`:
-
-- reads are aligned against a **combined main-organism + spike-in reference**;
-- the aligned BAM is split into main-organism and spike-in BAM files;
-- spike-in reads are counted for each sample;
-- normalization factors are calculated from spike-in read counts;
-- spike-in-normalized bigWigs are generated for downstream signal analyses.
+When enabled, reads are aligned to a combined main-organism/spike-in reference. The aligned BAM is split by genome and spike-in read counts are used to calculate normalization factors and generate normalized bigWigs.
 
 Two normalization factors are reported:
 
-- a factor relative to the **median spike-in read count**;
-- a **DESeq2-derived spike-in size factor**, converted to the scale factor required by `bamCoverage`.
+- **Median-based** spike-in scaling,
+- **DESeq2-derived** spike-in scaling.
 
-The combined reference must use distinguishable chromosome or contig prefixes for the main and spike-in genomes. These prefixes are defined in the organism-specific configuration block:
+For combined references, chromosome or contig names must use distinguishable prefixes so that reads can be separated by organism after alignment. These prefixes must be added to the combined reference genome before generating the STAR index.
 
 ```yaml
 main_prefix: "hs_"
@@ -175,29 +155,24 @@ sc_chrII
 ...
 ```
 
-A SLURM script for generating a STAR combined-genome index is provided in:
+A SLURM script for generating a STAR genome index is provided in:
 
 ```text
 sbatch/star_index_generator.sh
 ```
-
-The reference FASTA, output directory, Conda module, and SLURM resources should be adapted to the local HPC environment.
+Adapt the reference paths, Conda environment and SLURM resources to the local HPC system..
 
 ## Peak calling
 
-Peak calling is optional and controlled through:
+Peak calling is optional and controlled through `config/config.yaml`:
 
 ```yaml
 calling_peaks: "yes"
 ```
 
-To skip the complete peak-calling module:
+Supported values are "yes" and "no".
 
-```yaml
-calling_peaks: "no"
-```
-
-When enabled, the workflow uses **MACS3** and requires metadata defining IP samples, controls, experimental conditions, biological replicates, ChIP targets, and peak-calling mode.
+When enabled, MACS3 uses the sample metadata to define IP samples, controls, conditions, replicates, ChIP targets and peak-calling mode.
 
 The metadata path is defined in the configuration file:
 
@@ -277,31 +252,25 @@ consensus_peaks:
 
 Consensus peak sets are subsequently merged into **union peak sets**, which provide a common genomic reference for downstream comparisons.
 
-These union sets are used for:
-
-- read counting;
-- FRiP calculation;
-- peak-level QC;
-- normalized signal heatmaps.
+Individual and consensus peak sets are used for FRiP and peak-level QC. Union peak sets are used for read-count matrices and normalized signal heatmaps.
 
 ## Quality control
 
 The workflow performs quality control at multiple stages, including:
 
-- FastQC before and after trimming
-- SAMtools alignment statistics
-- Picard alignment and insert-size metrics
-- blacklist read fraction
-- strand cross-correlation with phantompeakqualtools
-- deepTools fingerprint plots
-- BAM-level correlation and PCA
-- normalized bigWig correlation and PCA
-- IP-only reproducibility analyses when peak calling is enabled
-- MultiQC aggregation
+- FastQC before and after trimming.
+- SAMtools and Picard alignment metrics.
+- blacklist read fraction.
+- strand cross-correlation with phantompeakqualtools.
+- deepTools fingerprint plots.
+- BAM-level correlation and PCA.
+- normalized bigWig correlation and PCA.
+- IP reproducibility analyses when peak calling is enabled.
+- MultiQC report.
 
 ## Conda environments
 
-Rule-specific dependencies are defined under:
+Rule-specific Conda environments are defined under:
 
 ```text
 envs/
@@ -322,17 +291,9 @@ sbatch/controller.sh
 slurm_config/config.yaml
 slurm_config/slurm_jobscript.sh
 ```
+Check the SLURM partition, log paths, Conda environment, pipeline directory and resource settings.
 
-In particular, check:
-
-- SLURM partition;
-- controller log paths;
-- Miniconda/Anaconda module;
-- Snakemake environment name;
-- pipeline installation directory;
-- cluster job limits and resource syntax.
-
-The workflow can then be submitted with:
+Submit the workflow with:
 
 ```bash
 sbatch sbatch/controller.sh
@@ -344,18 +305,16 @@ The controller builds the Snakemake DAG and submits individual workflow rules as
 
 Depending on the selected configuration, the workflow generates:
 
-- trimmed FASTQ files;
-- aligned and indexed BAM files;
-- main-organism and spike-in BAMs;
-- spike-in read-count and scale-factor tables;
-- CPM- or spike-in-normalized bigWigs;
-- QC metrics, PCA, and correlation plots;
-- MultiQC reports;
-- individual MACS3 peaks;
-- consensus and union peak sets;
-- FRiP and peak-QC tables;
-- union-peak read count matrices;
-- peak-centered signal heatmaps.
+- Trimmed FASTQ files.
+- Aligned and indexed BAM files when spike-in normalization is enabled.
+- Main-organism and spike-in BAMs.
+- Spike-in read-count and scale-factor tables.
+- CPM- or spike-in-normalized bigWigs.
+- QC metrics, PCA, and correlation analyses.
+- Individual, consensus and union peak sets
+- FRiP and peak-QC tables.
+- Union-peak read count matrices.
+- Peak-centered signal heatmaps.
 
 Main workflow outputs are written below:
 
@@ -370,7 +329,3 @@ Rule-specific logs and benchmark files are written below:
 paths:
   log_root: "/path/to/logs"
 ```
-
-## Notes
-
-This workflow was developed for reproducible ChIP-seq processing on SLURM-based HPC systems. Scheduler settings and computational resources should be adapted to the local infrastructure and dataset size.
